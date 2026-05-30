@@ -16,9 +16,10 @@ app.get("/api/rating", async (req, res) => {
     });
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Failed to fetch rating" });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Running on port ${PORT}`));
+// Export for Vercel
+module.exports = app;
