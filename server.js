@@ -4,48 +4,51 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 
+// Test endpoint - just to confirm API is working
+app.get("/", (req, res) => {
+  res.json({ status: "API is working" });
+});
+
+// Debug endpoint - shows raw error
 app.get("/api/rating", async (req, res) => {
   try {
-    const appId = req.query.id;
+    const appId = req.query.id || "com.esoftstudio.allahmuhammadnames";
 
-    if (!appId) {
-      return res.status(400).json({ error: "App ID is required" });
-    }
-
-    // Fetch Google Play page directly
     const response = await fetch(
-      `https://play.google.com/store/apps/details?id=${appId}&hl=en&gl=US`
+      `https://play.google.com/store/apps/details?id=${appId}&hl=en&gl=US`,
+      {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        }
+      }
     );
 
+    // Return status for debugging
     if (!response.ok) {
-      return res.status(404).json({ error: "App not found" });
+      return res.json({ 
+        debug: "Fetch failed",
+        status: response.status,
+        statusText: response.statusText
+      });
     }
 
     const html = await response.text();
 
-    // Extract rating
-    const ratingMatch = html.match(/(\d+\.\d+)<\/span>\s*<\/div>\s*<div[^>]*>\s*<div[^>]*star/);
-    const countMatch = html.match(/([\d,]+)\s*ratings/i);
-
-    // Alternative patterns if above fails
-    const ratingMatch2 = html.match(/"starRating":\s*"?(\d+\.\d+)"?/);
-    const countMatch2 = html.match(/"ratingCount":\s*"?(\d+)"?/);
-
-    const rating = ratingMatch?.[1] || ratingMatch2?.[1] || null;
-    const count = countMatch?.[1]?.replace(/,/g, "") || countMatch2?.[1] || null;
-
-    if (!rating || !count) {
-      return res.status(404).json({ error: "Could not extract rating data" });
-    }
-
-    res.json({
-      rating: parseFloat(rating).toFixed(1),
-      count: parseInt(count)
+    // Return first 500 chars for debugging
+    return res.json({
+      debug: "Fetch succeeded",
+      htmlPreview: html.substring(0, 500)
     });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    // Return exact error message
+    res.status(500).json({ 
+      debug: "Exception caught",
+      error: error.message,
+      stack: error.stack
+    });
   }
 });
 
