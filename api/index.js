@@ -14,20 +14,20 @@ module.exports = async (req, res) => {
 
     const html = await response.text();
 
-    // Extract rating
-    const ratingMatch = html.match(/"starRating":\s*"?(\d+\.\d+)"?/);
-    const countMatch = html.match(/"ratingCount":\s*"?(\d+)"?/);
-
-    const rating = ratingMatch?.[1] || null;
-    const count = countMatch?.[1] || null;
-
-    if (!rating || !count) {
-      return res.status(404).json({ error: "Could not extract rating data" });
-    }
+    // Search for rating-related text
+    const lines = html
+      .split("\n")
+      .filter(line => 
+        line.includes("rating") || 
+        line.includes("Rating") ||
+        line.includes("star") ||
+        line.includes("review")
+      )
+      .slice(0, 20); // first 20 matching lines
 
     res.json({
-      rating: parseFloat(rating).toFixed(1),
-      count: parseInt(count)
+      status: response.status,
+      matchingLines: lines
     });
 
   } catch (error) {
